@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Pairwise alignment demonstration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <script src="http://code.jquery.com/jquery.js"></script>
+
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-theme.min.css">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+
+    <script src="js/alignment.js"></script>
+
+
+    <style>
+        .alignment-table-cell {
+            font-size: 20px;
+            font-family: monospace;
+            width:   25px;
+            height:  25px;
+            padding: 5px;
+            text-align: center;
+            border-width: 0.5px;
+            border: black;
+        }
+
+        .alignment-string {
+            font-size: 40px;
+            font-family: monospace;
+            padding: 5px;
+            text-align: left;
+            fill: #CCC;
+        }
+    </style>
+
+  </head>
+
+  <body>
+         <nav class="navbar navbar-default" role="navigation">
+              <!-- Brand and toggle get grouped for better mobile display -->
+              <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                  <span class="sr-only">Toggle navigation</span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                </button>
+                <a id = "menu-title" class="navbar-brand" href="#">
+                    Pairwise alignment (Needleman-Wunsch)
+                </a>
+              </div>
+            </nav>
+
+            <div class = "container fluid">
+            <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+              <div class="panel panel-default">
+                <div class="panel-heading" role="tab" id="headingOne">
+                  <h4 class="panel-title">
+                    <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                      Alignment options
+                    </a>
+                  </h4>
+                </div>
+                <div id="collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+                  <div class="panel-body">
+                     <div class = "row">
+                            <form class="form-horizontal">
+                              <div class="form-group">
+                                <label for="sequence1" class="col-sm-2 control-label">Sequence 1</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="sequence1" value="ATGTTATC">
+                                </div>
+                              </div>
+
+                              <div class="form-group">
+                                <label for="sequence2" class="col-sm-2 control-label">Sequence 2</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="sequence2" value="ATCGTAC">
+                                </div>
+                              </div>
+
+                               <div class="form-group">
+                                <label for="match_score" class="col-sm-2 control-label">Match</label>
+                                <div class="col-sm-1">
+                                  <input type="text" class="form-control" id="match_score" value="2">
+                                </div>
+                                <label for="mismatch_score" class="col-sm-2 control-label">Mismatch</label>
+                                <div class="col-sm-1">
+                                  <div class="input-group">
+                                    <span class="input-group-addon">-</span>
+                                        <input type="text" class="form-control" id="mismatch_score" value="0">
+                                   </div>
+                                </div>
+                                <label for="indel_score" class="col-sm-2 control-label">Indel</label>
+                                <div class="col-sm-1">
+                                  <div class="input-group">
+                                    <span class="input-group-addon">-</span>
+                                        <input type="text" class="form-control" id="indel_score" value="1" width = 3>
+                                   </div>
+                                </div>
+                              </div>
+
+                              <div class = "col-sm-10">
+                                <span class = "pull-right">
+                                    <button class="btn btn-primary" id = "run-align">Align</button>
+                                </span>
+                              </div>
+                        </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+                <div class = "row">
+                    <div class = "col-xs-12">
+                        <table id = 'alignment_table'>
+                        </table>
+                    </div>
+                </div>
+                <div class = "row">
+                    <div class = "col-xs-12">
+                        <span id = "seq1" class = "alignment-string"> </span>
+                    </div>
+                </div>
+                <div class = "row">
+                    <div class = "col-xs-12">
+                        <span id = "seq2" class = "alignment-string"> </span>
+                    </div>
+                </div>
+            </div>
+
+  </body>
+
+   <script>
+
+        $("#run-align").on ("click", function (event) {
+            event.preventDefault();
+
+            function validate_number (text) {
+
+                try {
+                    var value = parseInt (text);
+                    if  ("" + value == text) {
+                        return value;
+                    }
+                }
+                catch (e) {
+
+                }
+                return undefined;
+            }
+
+            function validate_sequence (text) {
+
+                var text = text.toUpperCase();
+
+                try {
+                    var value = text.replace (/[^ACGT]/,"");
+                    if  (value == text) {
+                        return value;
+                    }
+                }
+                catch (e) {
+
+                }
+                return undefined;
+            }
+
+
+            var validators = [["match_score", validate_number],
+                              ["mismatch_score", validate_number],
+                              ["indel_score", validate_number],
+                              ["sequence1", validate_sequence],
+                              ["sequence2", validate_sequence],
+                              ];
+
+            var settings     = {};
+
+
+
+            if (_.every (validators, function (d) {
+                var value = d[1] ($("#" + d[0]).val());
+                $("#" + d[0]).parent().removeClass ("has-success has-error");
+                if (_.isUndefined (value)) {
+                    $("#" + d[0]).parent().addClass ("has-error");
+                    return false;
+                }
+
+                $("#" + d[0]).parent().addClass ("has-success");
+                settings[d[0]] = value;
+                return true;
+            })) {
+                 alignment_demo.generate_table ("alignment_table", {"th" : "alignment-table-cell", "td" : "alignment-table-cell"},
+                                       settings["sequence1"],
+                                       settings["sequence2"],
+                                       settings["match_score"],
+                                       settings["mismatch_score"],
+                                       settings["indel_score"],
+                                       settings["indel_score"]);
+            }
+
+
+
+        });
+
+
+   </script>
+</html>
+
+
+
+
+
