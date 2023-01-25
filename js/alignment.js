@@ -141,7 +141,11 @@ alignment_demo.generate_table = function (id,
 
         data_cells.style ("opacity", function (d, i, j) {
                 //console.log ((i+1) + "," + (j+1));
-                if (i ==0 || path[(j) + "," + (i)]) return 1;  return 0.1;
+                if (i ==0 || path[(j) + "," + (i)]) return 1;  return 0.5;
+            });
+        data_cells.style ("color", function (d, i, j) {
+                //console.log ((i+1) + "," + (j+1));
+                if (i ==0 || path[(j) + "," + (i)]) return "red";  return "grey";
             });
         //d3.select (this).style ("opacity",1);
 
